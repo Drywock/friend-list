@@ -16,34 +16,64 @@
 
     <ul>
     <?php
+        // Loading data from file
+        $fileIn = fopen("friends.txt", "rt");
+        $friendsArray = [];
+        while(!feof($fileIn)){
+            $name = trim(fgets($fileIn));
+            if($name !== "")
+            {
+                array_push($friendsArray, $name);
+            }
+        }
+        fclose($fileIn);
+
+        // Handle new friend
         if(isset($_POST["name"])){
             $name = $_POST["name"];
-            $file = fopen("friends.txt","a");
-            fwrite($file, "\n$name");
-            fclose($file);
+            array_push($friendsArray, $name);
         }
 
+        // Handle friend deletion
+        if (isset($_POST['delete'])) {
+            $indexToBeRemoved = $_POST['delete'];
+            array_splice($friendsArray, $indexToBeRemoved, 1);
+        }
+
+        // Save changes
+        $fileOut = fopen("friends.txt", "wt");
+        foreach($friendsArray as $name) {
+            fwrite($fileOut, "$name\n");
+        }
+        fclose($fileOut);
+
+        // filter set-up
         $nameFilter = "";
         $startingWith = false;
         if(isset($_POST["nameFilter"])){
             $nameFilter = $_POST["nameFilter"];
+            echo "filter";
         }
         if(isset($_POST["startingWith"])){
             $startingWith = $_POST["startingWith"];
         }
+        
 
-        $file = fopen("friends.txt", "r");
-        while(!feof($file)){
-            $name = fgets($file);
-            if($nameFilter === "") {
-                echo "<li>$name</li>";
+        // display list
+        $i = 0;
+        foreach($friendsArray as $name){
+            if(($nameFilter === "") || //No - filter
+                 ($startingWith && stripos($name, $nameFilter) === 0) || // filter on begining of the name
+                 (!$startingWith && stripos($name, $nameFilter) !== false)) { // filter every where in the name
+                echo "<li>
+                        <form action=index.php method='post'>
+                            $name 
+                            <button type='submit' name='delete' value='$i'>Delete</button>
+                        </form>
+                      </li>";
             }
-            else if(($startingWith && stripos($name, $nameFilter) === 0) || (!$startingWith && stripos($name, $nameFilter) !== false)) {
-                echo "<li>$name</li>";
-            }
+            $i++;
         }
-        fclose($file);
-
     ?>
     </ul>
 
